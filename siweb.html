@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tableau</title>
+<script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+     integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+     crossorigin="">
+     <style>
+  .btn {
+  background-color: #87CEEB ;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+     
+     </style>
+     
+     
+<script>
+
+class SPARQLQueryDispatcher {
+	constructor( endpoint ) {
+		this.endpoint = endpoint;
+	}
+
+	async query( sparqlQuery ) {
+		const fullUrl = this.endpoint + '?query=' + encodeURIComponent( sparqlQuery );
+		const headers = { 'Accept': 'application/sparql-results+json' };
+
+		const body = await fetch(fullUrl, { headers });
+        return await body.json();
+	}
+}
+
+
+ let countries = {};
+  let languages = {};
+  let listLanguages  =[];
+  let markers = [];
+
+const endpointUrl = 'https://query.wikidata.org/sparql';
+const sparqlQuery = `SELECT ?country ?countryLabel ?language ?languageLabel ?coords
+WHERE {
+  ?country wdt:P31 wd:Q3624078 .
+  ?country rdfs:label ?countryLabel .
+  ?country wdt:P37 ?language .
+  ?language rdfs:label ?languageLabel .
+  ?country wdt:P625 ?coords .
+  FILTER (lang(?countryLabel) = "en")
+  FILTER (lang(?languageLabel) = "en")
+
+}
+`;
+
+
+async function execute(){
+
+const queryDispatcher = new SPARQLQueryDispatcher( endpointUrl );
+
+queryDispatcher.query( sparqlQuery ).then((v)=>{traitement2(v.results.bindings); 
+    
+  });
+}
+
+
+function addPins(language){
+let regex = /Point\(\s*([+-]?\d+\.\d+)\s+([+-]?\d+\.\d+)\s*\)/;
+
+removePins();
+
+for (let pays of languages[language]){
+	console.log(pays.coords);
+ 
+  let str = pays.coords;
+	let match = str.match(regex);
+	let x = match[1];
+	let y = match[2];
+  addPin(y,x,language);
+  }
+
+} 
+
+function removePins() {
+  for (let marker of markers) {
+    map.removeLayer(marker);
+  }
+}
+
+
+function addPin(long,lat,lang){
+   let marker = L.marker([long,lat]).addTo(map)
+    .bindPopup('Here they speak '+lang)
+    .openPopup();
+  markers.push(marker);
+  }
+ 
+
+
+
+function setListButton(){
+  var liste = document.getElementById("maListe");
+  listLanguages.sort();
+  for (var i = 0; i < listLanguages.length; i++) {
+    var bouton = document.createElement("button");
+    bouton.textContent = listLanguages[i];
+    bouton.classList.add("btn");
+    liste.appendChild(bouton);
+  }
+  
+  
+  $('.btn').click(function(event) {
+        let text = $(event.target).text();
+        addPins(text);
+});
+}
+
+function traitement2(e) {
+ 
+
+  e.map((items) => {
+    let countryName = items.countryLabel.value;
+    let countryLang = items.languageLabel.value;
+    let countryCoords = items.coords.value;
+
+    // Créer un objet pays s'il n'existe pas déjà
+    if (!countries[countryName]) {
+      countries[countryName] = { languages: [], coords: countryCoords };
+    }
+
+    // Ajouter la langue au pays
+    countries[countryName]["languages"].push(countryLang);
+
+    // Créer un objet langue s'il n'existe pas déjà
+    if (!languages[countryLang]) {
+      languages[countryLang] = [];
+       listLanguages.push(countryLang)
+    
+    }
+    
+         
+
+    // Ajouter le pays à la langue
+    languages[countryLang].push({ countryName: countryName, coords: countryCoords });
+  });
+
+//  console.log(countries); // Affiche la liste des pays et leurs langues
+  //console.log(languages); // Affiche la liste des langues et leurs pays
+  setListButton();
+}
+  
+  function getPointFromLang(params) 
+  {
+    let infos = [];
+   
+    country.forEach(element => {
+      if (country[element].languages.includes(params)) {
+        infos.push(element);
+      }
+    });
+    console.log(infos);
+    //console.log(params);
+    return infos;
+    
+  }
+
+ execute();
+
+</script>
+     
+     
+     
+     
+     
+     
+     
+     
+</head>
+<body>
+
+
+<div id="map" style="width: 1000px; height: 400px;"></div>
+<div id="maListe" class="btn-group"> </div>
+
+ <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+     integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+     crossorigin=""></script>
+     
+     <script>
+
+var map = L.map('map').setView([51.505, -0.09], 1);
+
+
+var mainLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    minZoom:1,
+    maxZoom:6
+}).addTo(map);
+
+
+</script>
+</body>
+
+
+</html>
+
+
