@@ -142,6 +142,8 @@ function setListButton(){
         let text = $(event.target).text();
         addPins(text);
 });
+
+
 }
 
 function traitement2(e) {
@@ -192,9 +194,22 @@ function traitement2(e) {
     return infos;
     
   }
+  function setMap(){
+    console.log("ok")
+    
+  }
 
  execute();
-
+ $(document).ready(function() {
+  $('#toggle').click(function() {
+    var etatActuel = $('#map').is(':hidden');
+    if (etatActuel) {
+      $('#map').show();
+    } else {
+      $('#map').hide();
+    }
+  });
+});
 </script>
      
      
@@ -214,7 +229,8 @@ function traitement2(e) {
 </div>
 
 
-<div id="map" style="width: 1000px; height: 400px;"></div>
+<div id="map" style="width: 1000px; height: 400px; "></div>
+<button id="toggle">Activer/Désactiver la carte</button>
 <div id="maListe" class="btn-group"> </div>
 
  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
